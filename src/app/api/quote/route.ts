@@ -84,6 +84,16 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error(`quote failed at ${stage}:`, err);
     const message = err instanceof Error ? err.message : "quote failed";
+    if (/insufficient balance/i.test(message)) {
+      return NextResponse.json(
+        {
+          error:
+            "Your balance doesn't cover this purchase yet. Top up any asset on any supported chain — it all counts as one balance.",
+          reason: "insufficient_balance",
+        },
+        { status: 402 },
+      );
+    }
     return NextResponse.json({ error: message, stage }, { status: 500 });
   }
 }
