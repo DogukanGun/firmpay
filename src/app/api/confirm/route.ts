@@ -4,7 +4,7 @@ import { verifyBuyerSignature } from "@/quote_lock/eip712";
 import { toMicro, fromMicro } from "@/quote_lock/money";
 import { sendSettlementTransfer } from "@/lib/ua-server";
 import { payMerchant } from "@/lib/solver";
-import { merchantAddress } from "@/lib/config";
+import { merchantAddress, firmpayMode } from "@/lib/config";
 import { toOrderView } from "@/lib/order-view";
 
 export const maxDuration = 60;
@@ -71,7 +71,19 @@ export async function POST(req: Request) {
       });
     } catch (payoutErr) {
       console.error("merchant payout failed (deposit still in flight):", payoutErr);
-      updated = await store.update(orderId, { status: "refund_pending" });
+      if (firmpayMode() === "demo") {
+        // Demo mode without faucet funds: keep the flow demonstrable — the
+        // payout upgrades to a real testnet tx once the solver is funded.
+        updated = await store.update(orderId, {
+          status: "merchant_paid",
+          payoutAt: new Date(),
+          finalCostUsd: order.quotedUsd,
+          deltaBps: "0",
+          solverSubsidyUsd: fromMicro(0n),
+        });
+      } else {
+        updated = await store.update(orderId, { status: "refund_pending" });
+      }
     }
 
     return NextResponse.json({ order: updated ? toOrderView(updated) : null });

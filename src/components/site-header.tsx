@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useBuyer } from "@/hooks/use-buyer";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { IS_DEMO } from "@/lib/mode";
 
 function shortAddr(a: string) {
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
@@ -18,6 +20,11 @@ export function SiteHeader() {
             F
           </span>
           <span className="text-[15px] font-semibold tracking-tight">FirmPay</span>
+          {IS_DEMO && (
+            <Badge variant="outline" className="font-mono text-[10px] uppercase">
+              testnet demo
+            </Badge>
+          )}
         </Link>
         <nav className="flex items-center gap-3">
           <Link

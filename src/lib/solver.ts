@@ -6,9 +6,14 @@ import {
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { arbitrum } from "viem/chains";
-import { arbitrumRpcUrl, solverKey, inventoryMinUsdc } from "./config";
-import { USDC_ARBITRUM } from "./ua-server";
+import { arbitrum, arbitrumSepolia } from "viem/chains";
+import {
+  arbitrumRpcUrl,
+  solverKey,
+  inventoryMinUsdc,
+  chainEnv,
+  usdcAddress,
+} from "./config";
 
 /**
  * The single hot-wallet solver (paper §4): holds native USDC inventory on
@@ -21,10 +26,11 @@ import { USDC_ARBITRUM } from "./ua-server";
 function clients() {
   const account = privateKeyToAccount(solverKey());
   const transport = http(arbitrumRpcUrl());
+  const chain = chainEnv() === "testnet" ? arbitrumSepolia : arbitrum;
   return {
     account,
-    wallet: createWalletClient({ account, chain: arbitrum, transport }),
-    public: createPublicClient({ chain: arbitrum, transport }),
+    wallet: createWalletClient({ account, chain, transport }),
+    public: createPublicClient({ chain, transport }),
   };
 }
 
@@ -40,7 +46,7 @@ export function solverDepositAddress(): `0x${string}` {
 export async function inventoryMicro(): Promise<bigint> {
   const { public: pub, account } = clients();
   return pub.readContract({
-    address: USDC_ARBITRUM,
+    address: usdcAddress(),
     abi: erc20Abi,
     functionName: "balanceOf",
     args: [account.address],
@@ -61,7 +67,7 @@ export async function payMerchant(
 ): Promise<Hex> {
   const { wallet } = clients();
   return wallet.writeContract({
-    address: USDC_ARBITRUM,
+    address: usdcAddress(),
     abi: erc20Abi,
     functionName: "transfer",
     args: [merchant, amountMicro],

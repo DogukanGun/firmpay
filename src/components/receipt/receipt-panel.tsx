@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import type { OrderView } from "@/lib/order-view";
+import { EXPLORER_BASE } from "@/lib/mode";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ const STEPS: Step[] = [
     detail: "Solver fronted native USDC on Arbitrum — no waiting on bridges",
     done: (o) => ["merchant_paid", "reconciled"].includes(o.status),
     link: (o) =>
-      o.payoutTxHash ? `https://arbiscan.io/tx/${o.payoutTxHash}` : null,
+      o.payoutTxHash ? `${EXPLORER_BASE}/tx/${o.payoutTxHash}` : null,
   },
   {
     key: "final",
@@ -48,7 +49,7 @@ const STEPS: Step[] = [
     detail: "Cross-chain leg settled — solver inventory made whole",
     done: (o) => o.status === "reconciled",
     link: (o) =>
-      o.depositTxHash ? `https://arbiscan.io/tx/${o.depositTxHash}` : null,
+      o.depositTxHash ? `${EXPLORER_BASE}/tx/${o.depositTxHash}` : null,
   },
 ];
 

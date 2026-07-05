@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { getOrderStore } from "@/db";
 import { getProduct } from "@/lib/products";
-import { merchantAddress, quoteSignerKey } from "@/lib/config";
+import { merchantAddress, quoteSignerKey, firmpayMode } from "@/lib/config";
 import { createSettlementTransfer } from "@/lib/ua-server";
 import { hasInventoryFor, solverDepositAddress } from "@/lib/solver";
 import { toMicro, fromMicro } from "@/quote_lock/money";
@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     const notional = toMicro(product.priceUsd);
 
     stage = "inventory";
-    if (!(await hasInventoryFor(notional))) {
+    // Back-pressure gate is advisory in demo mode (solver may be faucet-pending).
+    if (firmpayMode() !== "demo" && !(await hasInventoryFor(notional))) {
       return NextResponse.json(
         { error: "temporarily unavailable", reason: "inventory_backpressure" },
         { status: 503 },

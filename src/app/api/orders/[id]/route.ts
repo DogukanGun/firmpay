@@ -28,8 +28,22 @@ export async function GET(
     order = (await store.update(id, { status: "expired" })) ?? order;
   }
 
+  // Demo mode: simulate source finality ~6s after the merchant payout.
+  const isDemoLeg =
+    (order.uaTransaction as { demo?: boolean } | null)?.demo === true;
+  if (isDemoLeg && order.status === "merchant_paid" && order.payoutAt) {
+    if (Date.now() - order.payoutAt.getTime() > 6000) {
+      order =
+        (await store.update(id, {
+          status: "reconciled",
+          reconciledAt: new Date(),
+        })) ?? order;
+    }
+  }
+
   // Reconciliation: poll the UA leg while the deposit is in flight.
   if (
+    !isDemoLeg &&
     (order.status === "merchant_paid" || order.status === "confirmed") &&
     order.uaTransactionId
   ) {

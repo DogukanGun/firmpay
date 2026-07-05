@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createBuyerUA } from "@/lib/ua-server";
+import { firmpayMode } from "@/lib/config";
 
 export const maxDuration = 30;
 
@@ -12,6 +13,14 @@ export async function GET(req: Request) {
     const eoa = new URL(req.url).searchParams.get("eoa");
     if (!eoa || !/^0x[0-9a-fA-F]{40}$/.test(eoa)) {
       return NextResponse.json({ error: "invalid eoa" }, { status: 400 });
+    }
+    if (firmpayMode() === "demo") {
+      return NextResponse.json({
+        totalUsd: 25.0,
+        chains: 3,
+        perChain: { "8453": 12.5, "1": 7.5, "42161": 5.0 },
+        demo: true,
+      });
     }
     const ua = createBuyerUA(eoa as `0x${string}`);
     const assets = await ua.getPrimaryAssets();

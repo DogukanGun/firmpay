@@ -1,6 +1,7 @@
 import { UniversalAccount, CHAIN_ID } from "@/lib/ua-sdk";
-import { formatEther } from "viem";
-import { particleConfig } from "./config";
+import { formatEther, keccak256, toHex } from "viem";
+import { randomBytes } from "node:crypto";
+import { particleConfig, firmpayMode } from "./config";
 import { toMicro } from "@/quote_lock/money";
 
 /** Native USDC on Arbitrum One — the canonical settlement asset (paper §4). */
@@ -50,6 +51,20 @@ export async function createSettlementTransfer(
   solverDeposit: `0x${string}`,
   amountUsd: string,
 ): Promise<UaTransferQuote> {
+  // Demo mode: UA V2 is mainnet-only, so the cross-chain leg is simulated.
+  // The rootHash the buyer signs and the EIP-712 lock stay real.
+  if (firmpayMode() === "demo") {
+    const rootHash = keccak256(toHex(randomBytes(32)));
+    const amountMicro = toMicro(amountUsd);
+    const feeMicro = toMicro("0.02");
+    return {
+      transaction: { demo: true, rootHash, amountUsd },
+      rootHash,
+      totalDebitMicro: amountMicro + feeMicro,
+      feeMicro,
+    };
+  }
+
   const ua = createBuyerUA(buyerEoa);
   const tx = (await ua.createTransferTransaction({
     token: { chainId: CHAIN_ID.ARBITRUM_MAINNET_ONE, address: USDC_ARBITRUM },
@@ -83,6 +98,9 @@ export async function sendSettlementTransfer(
   transaction: Record<string, unknown>,
   buyerSignature: `0x${string}`,
 ): Promise<{ transactionId: string | null; raw: unknown }> {
+  if (transaction.demo === true) {
+    return { transactionId: `demo_${Date.now()}`, raw: { demo: true } };
+  }
   const ua = createBuyerUA(buyerEoa);
   const result = await ua.sendTransaction(
     transaction as unknown as Parameters<typeof ua.sendTransaction>[0],
