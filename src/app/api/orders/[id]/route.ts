@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { UA_TRANSACTION_STATUS } from "@particle-network/universal-account-sdk";
+import { privateKeyToAccount } from "viem/accounts";
 import { getOrderStore } from "@/db";
 import { getUaTransaction } from "@/lib/ua-server";
 import { toOrderView } from "@/lib/order-view";
+import { merchantAddress, quoteSignerKey } from "@/lib/config";
+import { solverDepositAddress } from "@/lib/solver";
 
 export const maxDuration = 30;
 
@@ -55,5 +58,22 @@ export async function GET(
     }
   }
 
-  return NextResponse.json({ order: toOrderView(order) });
+  // Public verification context: lets the receipt page (or any judge)
+  // recompute and verify the EIP-712 LockedQuote signature in the browser.
+  let verify: {
+    merchant: string;
+    solverDeposit: string;
+    quoteSigner: string;
+  } | null = null;
+  try {
+    verify = {
+      merchant: merchantAddress(),
+      solverDeposit: solverDepositAddress(),
+      quoteSigner: privateKeyToAccount(quoteSignerKey()).address,
+    };
+  } catch {
+    // env not configured — receipt renders without the verify panel
+  }
+
+  return NextResponse.json({ order: toOrderView(order), verify });
 }
