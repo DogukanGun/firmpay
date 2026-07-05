@@ -1,7 +1,4 @@
-import {
-  UniversalAccount,
-  CHAIN_ID,
-} from "@particle-network/universal-account-sdk";
+import { UniversalAccount, CHAIN_ID } from "@/lib/ua-sdk";
 import { formatEther } from "viem";
 import { particleConfig } from "./config";
 import { toMicro } from "@/quote_lock/money";

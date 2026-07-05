@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { UA_TRANSACTION_STATUS } from "@particle-network/universal-account-sdk";
+import { UA_TRANSACTION_STATUS } from "@/lib/ua-sdk";
 import { privateKeyToAccount } from "viem/accounts";
 import { getOrderStore } from "@/db";
 import { getUaTransaction } from "@/lib/ua-server";
